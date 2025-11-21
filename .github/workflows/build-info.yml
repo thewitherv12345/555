@@ -1,0 +1,42 @@
+name: Build Info Update
+
+on:
+  push:
+    branches: [ main ]
+    paths-ignore:
+      - 'build_info.txt'
+
+permissions:
+  contents: write
+
+jobs:
+  build_info:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Клонирование репозитория
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # критично: иначе git log, git rev-parse могут не работать
+
+      - name: Установка Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Обновление файла build_info.txt
+        run: python PJ11_gitinfo_08.py
+
+      - name: Сохранение изменений
+        run: |
+          git config user.name "CI Bot"
+          git config user.email "ci@example.com"
+
+          # Добавляем изменения, если есть
+          git add build_info.txt || echo "No changes to add"
+
+          # Если нет изменений - commit exit code 1, но это нормально
+          git commit -m "Автоматическое обновление build_info.txt [skip ci]" || echo "No changes to commit"
+
+          # Push (если commit был)
+          git push || echo "Push failed"
